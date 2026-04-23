@@ -105,7 +105,7 @@ The project includes Docker configurations for containerized deployment.
 
 1. Build and start the services:
    ```bash
-   docker-compose up --build
+   docker compose up --build
    ```
 2. Access the application:
    - Client: [http://localhost:3000](http://localhost:3000)
@@ -116,7 +116,7 @@ The project includes Docker configurations for containerized deployment.
 Use the `docker-compose.prod.yml` file for production deployment. Ensure environment variables are set correctly.
 
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ## CI/CD Pipeline
