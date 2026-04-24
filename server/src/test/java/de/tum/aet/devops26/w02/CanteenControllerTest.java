@@ -54,26 +54,35 @@ public class CanteenControllerTest {
 
     @Test
     public void testGetTodayMeals_ReturnsNoContent_WhenNoMealsAvailable() throws Exception {
-        when(restTemplate.getForObject(anyString(), eq(Week.class))).thenReturn(null);
-
-        List<Dish> result = getList("/mensa-garching/today", HttpStatus.OK, Dish.class);
-        assertThat(result).isEmpty();
+        // Mock the API response
+        when(restTemplate.getForObject(anyString(), eq(Week.class))).thenReturn(new Week(15, 2024, List.of()));
+        // Act & Assert
+        getList("/{canteenName}/today", HttpStatus.NO_CONTENT, Dish.class, "mensa-garching");
     }
 
     @Test
     public void testGetTodayMeals_ReturnsOkWithMeals() throws Exception {
-        LocalDate testDate = LocalDate.of(2025, 5, 8);
-        int year = testDate.getYear();
-        int weekNumber = testDate.get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear());
-        Week testWeek = createTestData(testDate, weekNumber, year);
-
-        when(restTemplate.getForObject(anyString(), eq(Week.class))).thenReturn(testWeek);
-
-        List<Dish> result = getList("/mensa-garching/today", HttpStatus.OK, Dish.class);
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).name()).isEqualTo("Vegetarian Pasta");
-        assertThat(result.get(1).name()).isEqualTo("Salad");
+        // Arrange
+        int year = 2025;
+        // Note: use the same as the mocked clock above
+        LocalDate today = LocalDate.of(year, 5, 8);
+        int weekNumber = today.get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear());
+        String weekStr = String.format("%02d", weekNumber);
+        final var expectedWeek = createTestData(today, weekNumber, year);
+        // Mock the API response
+        String canteenName = "mensa-garching";
+        String expectedUrl = "https://tum-dev.github.io/eat-api/" + canteenName + "/" + year + "/" + weekStr + ".json";
+        when(restTemplate.getForObject(eq(expectedUrl), eq(Week.class))).thenReturn(expectedWeek);
+        // Act
+        List<Dish> actualTodayDishes = getList("/{canteenName}/today", HttpStatus.OK, Dish.class, canteenName);
+        // Assert
+        assertThat(actualTodayDishes).hasSize(2);
+        var actualDish1 = actualTodayDishes.getFirst();
+        assertThat(actualDish1.name()).isEqualTo("Vegetarian Pasta");
+        assertThat(actualDish1.dish_type()).isEqualTo("Main Dish");
+        var actualDish2 = actualTodayDishes.get(1);
+        assertThat(actualDish2.name()).isEqualTo("Salad");
+        assertThat(actualDish2.dish_type()).isEqualTo("Side Dish");
     }
 
     private <T> List<T> getList(String path, HttpStatus expectedStatus, Class<T> listElementType, Object... uriVariables) throws Exception {
